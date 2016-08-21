@@ -16,7 +16,7 @@ new_list=[[ids,clone.user_info(ids)["name"]]]
 start_time=-1
 count=0
 
-print len(his_list)
+print (len(his_list))
 while his_list:
     infos=clone.users_info(his_list[:100])
     if start_time == -1:

@@ -33,7 +33,7 @@ class Twitter:
     twitter_oauth = OAuth1Session(CCAA.CK, CCAA.CS, CCAA.AT, CCAA.AS)
     def __init__(self, target_id):
         self.target_id = target_id
-        
+
     @classmethod
     def __get_method(cls, url):
         try:
@@ -93,6 +93,42 @@ class Twitter:
         if req is None:
                 return []
         return [{x:twit[x] for x in twit if x=="text"or x=="id_str" or x=="created_at"}for twit in req]
+
+    def create_train_list(self, save=1,rep = 0,path="TimeLine/"):
+        """ツイートを取得し保存する
+        すでに保存してあるツイートがある場合そこに追加する（ツイートの重複はしない）
+        引数：指定id、ツイートを保存するか(def:yes)、リプライを入れるか（def:no）、ディレクトリ(def:TimeLine)
+        返り値：ツイートを結合したテキストと使用したapiの回数
+        """
+        max_id=None
+        path += "TimeLine"+self.ids
+        twit_count = 0
+        api_use_count = 0
+        old_timeline = []
+        timeline = []
+
+        if os.path.exists(path):
+            oldLine=pickle.load(open(path,"rb"))
+            since_id=oldLine[0][1]
+        else:
+            print ("user id ",ids,"is first")
+
+        for i in range(40):
+            api_use_count += 1
+            new_timeline+=self.get_twit_list(rep=rep, max_id=max_id)
+            if len(train_twit)<=0:
+                break
+            if api_use_count:
+                new_timeline = new_timeline[1:] #max_id以下を取得するので一つかぶる
+            twit_count +=len(new_timeline)
+            max_id=new_timeline[-1]["id_str"]#max_idは馬鹿でかい
+            timeline+=new_timeline
+        timeline += old_timeline
+        train_data=conect_timeline(timeLine, rep=rep)
+        if twit_count and save:
+            pickle.dump(timeLine,open(path,"wb"),-1)
+        print ("added:{} tweet  api: {} used".format(twit_count, api_use_count))
+        return (train_data, api_use_count)
 
     @classmethod
     def word_search(cls, text):

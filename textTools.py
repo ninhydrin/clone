@@ -16,8 +16,10 @@ import os
 import CCAA
 import clone
 import numpy as np
+from twitter_tools import Twitter
 
-MECAB_MODE = 'mecabrc'
+
+#MECAB_MODE = 'mecabrc'
 PARSE_TEXT_ENCODING = 'utf-8'
 
 stop_list=(u"RT",u"http")
@@ -25,60 +27,66 @@ stop_list=(u"RT",u"http")
 #PARSE_TEXT_ENCODING = 'utf-8'
 #MECAB_MODE = 'mecabrc'
 PARSE_TEXT_ENCODING = 'utf-8'
-MECAB_MODE = '-Ochasen -d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
+#MECAB_MODE = '-Ochasen -d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
 
 stop_list=(u"RT",u"http")
 
-def parse(text):
-    u"""記号を取り除きスペース区切りでテキストを返す
-    入力：str
-    返値：str
-    """
+class TextTools:
+    MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
     tagger = MeCab.Tagger(MECAB_MODE)
-    #text = unicode_string.encode(PARSE_TEXT_ENCODING)
-    #text = text.encode(PARSE_TEXT_ENCODING)
-
-    node = tagger.parseToNode(text)
-    result=""
-    while node:
-        word=node.surface
-        if word.isalpha() or "/" in word or "%" in word or "[]" in word or "「" in word or "」" in word:
+    tagger.parse("")
+    @classmethod
+    def parse(cls, text):
+        u"""記号を取り除きスペース区切りでテキストを返す
+        入力：str
+        返値：str
+        """
+        node = cls.tagger.parseToNode(text).next
+        result=""
+        while node:
+            word=node.surface
+            print(word,word.isalpha())
+            #if word.isalpha() or "/" in word or "%" in word or "[]" in word or "「" in word or "」" in word:
+            #    node = node.next
+            #    continue
+            word = node.surface
             node = node.next
-            continue
-        word = node.surface#.decode("utf-8")
-        node = node.next
-        result+=word+" "
-    return result.encode(PARSE_TEXT_ENCODING)
+            result+=word+" "
+        return result
 
-def conect_timeline(user_timeline_list,rep=1):
-    """ツイートのリストを一つの文字列にして返す
-    """
-    return_text=""
-    for tweet in user_timeline_list:
-        if "http" in tweet[0]:
-            continue
-        if not rep:
-            a = tweet[0].rsplit()
-            tweet[0]=""
-            for i in a:
-                if i[0] != "@":
-                    tweet[0]+=i+u"。"
-            tweet[0]=tweet[0][:-1]
-        return_text+=tweet[0].replace("\n",u"。")+u"。"
-        #return_text=re.sub(re.compile("[a-zA-Z0-9_]"), '', return_text)
-    return return_text
+    @classmethod
+    def conect_timeline(cls, timeline,rep=1):
+        """ツイートのリストを一つの文字列にして返す
+        """
+        return_text=""
+        for tweet in timeline:
+            if "http" in tweet["text"]:
+                continue
+            if not rep:
+                a = tweet["text"].rsplit()
+                tweet[0]=""
+                for i in a:
+                    if i[0] != "@":
+                        tweet[0]+=i+u"。"
+                tweet[0]=tweet[0][:-1]
+                return_text+=tweet[0].replace("\n",u"。")+u"。"
+                #return_text=re.sub(re.compile("[a-zA-Z0-9_]"), '', return_text)
+        return return_text
 
+def test():
+    text = u"高椅くんは、勉強しなかったので、点数がとれず、悔しがっていたのをいま思い出すと、残念だ。"
+    return TextTools.parse(text)
 
-def create_train(ids,save=1,rep = 0,path="TimeLine/"):
+def create_train(ids, save=1,rep = 0,path="TimeLine/"):
     """指定idのツイートを取得し保存する
     すでに保存してあるツイートがある場合そこに追加する（ツイートの重複はしない）
     引数：指定id、ツイートを保存するか(デフォルトはする)、リプライを入れるか（デフォルトは入れない）、ディレクトリ(def:TimeLine)
     返り値：ツイートを結合したテキストと使用したapiの回数
     """
-
     since_id=1
     max_id=None
-    path += "TimeLine"+ids 
+    path += "TimeLine"+ids
+    twitter = Twitter(ids)
     timeLine=[]
     count = 0
     oldLine = []
@@ -120,7 +128,6 @@ def make_dataset(tweetPath=None,vocabPath="data/vocab.bin"):
     vocab = pickle.load(open(vocabPath,"rb")) if os.path.exists(vocabPath) else {}
     #text=codecs.open(textPath ,'rb', 'UTF-8').read()
     text = conect_timeline(pickle.load(open(tweetPath,"rb")))
-
     tagger = MeCab.Tagger(MECAB_MODE)
     #text = text.encode(PARSE_TEXT_ENCODING)
     node = tagger.parseToNode(text)
