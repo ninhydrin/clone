@@ -166,8 +166,8 @@ class Twitter:
 
 
 class TextTools:
-    #MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
-    MECAB_MODE = '-d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
+    MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
+    #MECAB_MODE = '-d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
     tagger = MeCab.Tagger(MECAB_MODE)
     tagger.parse("")
     @classmethod
@@ -202,6 +202,7 @@ class TextTools:
                 if sentence[0] != "@":
                     format_text += sentence + "。"
         return format_text
+
     @classmethod
     def make_dataset(cls, tweetPath=None, vocabPath="data/vocab.bin"):
         """データ・セットを作る
@@ -214,7 +215,6 @@ class TextTools:
         text = cls.conect_timeline(pickle.load(open(tweetPath, "rb")))
         node = cls.tagger.parseToNode(text)
         result=[]
-
         while node:
             word = node.surface
             feature = node.feature.split(',')

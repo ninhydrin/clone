@@ -12,7 +12,6 @@ from requests.exceptions import ConnectionError, ReadTimeout, SSLError
 
 counter=0
 
-
 while True:
     print ("Start ",counter," times learning.")
     exec(open("train.py").read())
