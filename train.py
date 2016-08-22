@@ -3,16 +3,15 @@ import time
 import math
 import sys
 import argparse
-#import cPickle as pickle
 import pickle
 import copy
 import os
-import MeCab
-import textTools
 
 import numpy as np
 from chainer import cuda, Variable, FunctionSet, optimizers
 import chainer.functions as F
+import MeCab
+from tools import Twitter, TextTools
 
 from CharRNN import CharRNN, make_initial_state
 
@@ -43,9 +42,8 @@ grad_clip   = args.grad_clip
 vocabPath='data/vocab.bin'
 modelPath="data/model"
 
-train_data, words, vocab = textTools.make_dataset()
+train_data, words, vocab = TextTools.make_dataset()
 pickle.dump(vocab, open(vocabPath, 'wb'))
-
 
 if os.path.exists(modelPath):
     model = pickle.load(open(modelPath, 'rb'))
@@ -58,6 +56,7 @@ while len(model.l3.b) < len(vocab):
     count+=1
 if count:
     print (count,"units added")
+del words, vocab
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()

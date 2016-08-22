@@ -9,11 +9,12 @@ import clone
 import RCCout
 import numpy as np
 from requests.exceptions import ConnectionError, ReadTimeout, SSLError
+
 counter=0
+
 
 while True:
     print ("Start ",counter," times learning.")
-    #execfile("train.py")
     exec(open("train.py").read())
     print (counter," times learning done.")
     counter+=1

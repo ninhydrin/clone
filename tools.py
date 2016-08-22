@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-"""twitter用の関数群
+"""Twitterや文字列用のクラス
 """
+import os
 from requests_oauthlib import OAuth1Session
-#from BeautifulSoup import BeautifulSoup
-from sklearn.feature_extraction.text import CountVectorizer
 from requests.exceptions import ConnectionError, ReadTimeout, SSLError
+import pickle
 import json
 import urllib
-import copy
-import pickle
-import MeCab
-import re
 import random
-import pickle
-import os
+
+import MeCab
 import CCAA
+import numpy as np
+
+import CCAA
+
 
 twit_url = "https://api.twitter.com/1.1/statuses/update.json"
 home_url = "https://api.twitter.com/1.1/statuses/home_timeline.json"
@@ -26,11 +26,12 @@ friends = "https://api.twitter.com/1.1/friends/ids.json?"
 users = "https://api.twitter.com/1.1/users/"
 
 target = CCAA.target
+stop_list=("RT","http")
 
-#twitter = OAuth1Session(CK, CS, AT, AS)
 
 class Twitter:
     twitter_oauth = OAuth1Session(CCAA.CK, CCAA.CS, CCAA.AT, CCAA.AS)
+
     def __init__(self, target_id):
         self.target_id = target_id
 
@@ -162,3 +163,71 @@ class Twitter:
         if req.status_code==200:
             return req
         return None
+
+
+class TextTools:
+    #MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
+    MECAB_MODE = '-d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
+    tagger = MeCab.Tagger(MECAB_MODE)
+    tagger.parse("")
+    @classmethod
+    def parse(cls, text):
+        u"""記号を取り除きスペース区切りでテキストを返す
+        入力：str
+        返値：str
+        """
+        node = cls.tagger.parseToNode(text).next
+        result=""
+        while node:
+            word=node.surface
+            print(word,word.isalpha())
+            #if word.isalpha() or "/" in word or "%" in word or "[]" in word or "「" in word or "」" in word:
+            #    node = node.next
+            #    continue
+            word = node.surface
+            node = node.next
+            result+=word+" "
+        return result
+
+    @classmethod
+    def conect_timeline(cls, timeline):
+        """ツイートのリストを一つの文字列にして返す
+        """
+        format_text = ""
+        for tweet in timeline:
+            if "http" in tweet["text"]:
+                continue
+            split_text = tweet["text"].rsplit()
+            for sentence in split_text:
+                if sentence[0] != "@":
+                    format_text += sentence + "。"
+        return format_text
+    @classmethod
+    def make_dataset(cls, tweetPath=None, vocabPath="data/vocab.bin"):
+        """データ・セットを作る
+        引数：対象のタイムラインとそのボキャブラリー
+        返値：データセットと
+        """
+        if not tweetPath:
+            tweetPath = "TimeLine/TimeLine"+CCAA.target
+        vocab = pickle.load(open(vocabPath,"rb")) if os.path.exists(vocabPath) else {}
+        text = cls.conect_timeline(pickle.load(open(tweetPath, "rb")))
+        node = cls.tagger.parseToNode(text)
+        result=[]
+
+        while node:
+            word = node.surface
+            feature = node.feature.split(',')
+            node = node.next
+            if word:
+                if not word in vocab:
+                    vocab[word] = (len(vocab),feature)
+                result.append(word)
+
+        dataset = np.ndarray([vocab[word][0] for word in result], dtype=np.int32)
+        print ('corpus length:{}  vocab size:{}'.format(len(result)), len(vocab))
+        return (dataset, result, vocab)
+
+def test():
+    text = u"高椅くんは、勉強しなかったので、点数がとれず、悔しがっていたのをいま思い出すと、残念だ。"
+    return TextTools.parse(text)

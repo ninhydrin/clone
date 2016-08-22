@@ -9,8 +9,8 @@ class CharRNN(FunctionSet):
             embed = F.EmbedID(n_vocab, n_units),
             l1_x = L.Linear(n_units, 4*n_units),
             l1_h = L.Linear(n_units, 4*n_units),
-            l2_h = L.Linear(n_units, 4*n_units),
             l2_x = L.Linear(n_units, 4*n_units),
+            l2_h = L.Linear(n_units, 4*n_units),
             l3   = L.Linear(n_units, n_vocab),
         )
         for param in self.parameters:
@@ -36,16 +36,11 @@ class CharRNN(FunctionSet):
     def add_unit(self):
         add_layer =  self.embed
         add_layer.W.data=np.vstack((add_layer.W.data,np.array([0.1]*len(add_layer.W.data[0]),dtype=np.float32)))
-        #add_layer.gW.data=np.vstack((add_layer.gW.data,np.array([0.1]*len(add_layer.gW.data[0]),dtype=np.float32)))
         add_layer =  self.l3
         add_layer.W.data=np.vstack((add_layer.W.data,np.ones(add_layer.W.data.shape[1],dtype=np.float32)*np.average(add_layer.W.data)))
-        #add_layer.gW.data=np.vstack((add_layer.gW.data,np.ones(add_layer.gW.data.shape[1],dtype=np.float32)*np.average(add_layer.gW.data)))
-
         add_layer.b.data=np.append(add_layer.b.data,np.average(add_layer.b.data))
-        #add_layer.gb=np.append(add_layer.gb,np.average(add_layer.gb))
 
-
-def make_initial_state(n_units, batchsize=50, train=True):
-    return {name: Variable(np.zeros((batchsize, n_units), dtype=np.float32),
-            volatile=not train)
-            for name in ('c1', 'h1', 'c2', 'h2')}
+    def make_initial_state(n_units, batchsize=50, train=True):
+        return {name: Variable(np.zeros((batchsize, n_units), dtype=np.float32),
+                               volatile=not train)
+                for name in ('c1', 'h1', 'c2', 'h2')}
