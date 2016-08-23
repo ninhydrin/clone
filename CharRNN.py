@@ -15,6 +15,7 @@ class CharRNN(FunctionSet):
         )
         for param in self.parameters:
             param[:] = np.random.uniform(-0.08, 0.08, param.shape)
+        self.n_units = n_units
 
     def forward_one_step(self, x_data, y_data, state, train=True, dropout_ratio=0.5):
         x = Variable(x_data, volatile=not train)
@@ -40,7 +41,7 @@ class CharRNN(FunctionSet):
         add_layer.W.data=np.vstack((add_layer.W.data,np.ones(add_layer.W.data.shape[1],dtype=np.float32)*np.average(add_layer.W.data)))
         add_layer.b.data=np.append(add_layer.b.data,np.average(add_layer.b.data))
 
-    def make_initial_state(n_units, batchsize=50, train=True):
-        return {name: Variable(np.zeros((batchsize, n_units), dtype=np.float32),
+    def make_initial_state(batchsize=50, train=True):
+        return {name: Variable(np.zeros((batchsize, self.n_units), dtype=np.float32),
                                volatile=not train)
                 for name in ('c1', 'h1', 'c2', 'h2')}

@@ -204,15 +204,12 @@ class TextTools:
         return format_text
 
     @classmethod
-    def make_dataset(cls, tweetPath=None, vocabPath="data/vocab.bin"):
+    def make_dataset(cls, tweet_path, vocab):
         """データ・セットを作る
         引数：対象のタイムラインとそのボキャブラリー
         返値：データセットと
         """
-        if not tweetPath:
-            tweetPath = "TimeLine/TimeLine"+CCAA.target
-        vocab = pickle.load(open(vocabPath,"rb")) if os.path.exists(vocabPath) else {}
-        text = cls.conect_timeline(pickle.load(open(tweetPath, "rb")))
+        text = cls.conect_timeline(pickle.load(open(tweet_path, "rb")))
         node = cls.tagger.parseToNode(text)
         result=[]
         while node:
