@@ -95,41 +95,44 @@ class Twitter:
                 return []
         return [{x:twit[x] for x in twit if x=="text"or x=="id_str" or x=="created_at"}for twit in req]
 
-    def create_train_list(self, save=1,rep = 0,path="TimeLine/"):
+    def save_timeline(self, save=1,rep = 0):
         """ツイートを取得し保存する
         すでに保存してあるツイートがある場合そこに追加する（ツイートの重複はしない）
-        引数：指定id、ツイートを保存するか(def:yes)、リプライを入れるか（def:no）、ディレクトリ(def:TimeLine)
-        返り値：ツイートを結合したテキストと使用したapiの回数
+        引数：指定id、ツイートを保存するか(def:yes)、リプライを入れるか（def:no）
+        返り値：使用したapiの回数
         """
         max_id=None
-        path += "TimeLine"+self.ids
+        path = "TimeLine/TimeLine"+self.target_id
         twit_count = 0
         api_use_count = 0
         old_timeline = []
         timeline = []
-
+        since_id = 0
         if os.path.exists(path):
-            oldLine=pickle.load(open(path,"rb"))
-            since_id=oldLine[0][1]
+            try:
+                old_timeline=pickle.load(open(path,"rb"))
+                since_id=old_timeline[0]["id_str"]
+            except EOFError as e:
+                print("EOFError {}".format(e))
         else:
-            print ("user id ",ids,"is first")
+            print ("user id ",self.target_id,"is first")
 
         for i in range(40):
             api_use_count += 1
-            new_timeline+=self.get_twit_list(rep=rep, max_id=max_id)
-            if len(train_twit)<=0:
-                break
-            if api_use_count:
+            new_timeline = self.get_twit_list(rep=rep, max_id=max_id, since_id=since_id)
+            if api_use_count > 1:
                 new_timeline = new_timeline[1:] #max_id以下を取得するので一つかぶる
+            if len(new_timeline)<=0:
+                break
             twit_count +=len(new_timeline)
             max_id=new_timeline[-1]["id_str"]#max_idは馬鹿でかい
             timeline+=new_timeline
+
         timeline += old_timeline
-        train_data=conect_timeline(timeLine, rep=rep)
         if twit_count and save:
-            pickle.dump(timeLine,open(path,"wb"),-1)
+            pickle.dump(timeline, open(path,"wb"),-1)
         print ("added:{} tweet  api: {} used".format(twit_count, api_use_count))
-        return (train_data, api_use_count)
+        return api_use_count
 
     @classmethod
     def word_search(cls, text):
@@ -166,8 +169,8 @@ class Twitter:
 
 
 class TextTools:
-    MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
-    #MECAB_MODE = '-d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
+    #MECAB_MODE=" -d /usr/local/lib/mecab/dic/mecab-ipadic-neologd"
+    MECAB_MODE = '-d /usr/local/Cellar/mecab/0.996/lib/mecab/dic/mecab-ipadic-neologd/'
     tagger = MeCab.Tagger(MECAB_MODE)
     tagger.parse("")
     @classmethod
@@ -221,8 +224,8 @@ class TextTools:
                     vocab[word] = (len(vocab),feature)
                 result.append(word)
 
-        dataset = np.ndarray([vocab[word][0] for word in result], dtype=np.int32)
-        print ('corpus length:{}  vocab size:{}'.format(len(result)), len(vocab))
+        dataset = np.array([vocab[word][0] for word in result], dtype=np.int32)
+        print ('corpus length:{}  vocab size:{}'.format(len(result), len(vocab)))
         return (dataset, result, vocab)
 
 def test():
